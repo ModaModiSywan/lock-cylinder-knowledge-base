@@ -2,6 +2,14 @@ export const prerender = false;
 
 import type { APIRoute } from 'astro';
 import { supabase } from '../../lib/supabase';
+import { Resend } from 'resend';
+
+// 目标接收询盘邮箱
+const TARGET_ADMIN_EMAIL = 'xuyilock@gmail.com';
+
+// 初始化 Resend 客户端
+const resendApiKey = import.meta.env.RESEND_API_KEY || process.env.RESEND_API_KEY;
+const resend = resendApiKey ? new Resend(resendApiKey) : null;
 
 interface InquiryPayload {
   name: string;
@@ -14,7 +22,7 @@ interface InquiryPayload {
   quantity?: string | number;
   message: string;
   specs_data?: Record<string, any>;
-  honeypot?: string; // 隐藏蜜罐字段，用于防御自动化机器人
+  honeypot?: string; // 隐藏蜜罐字段
 }
 
 export const POST: APIRoute = async ({ request, clientAddress }) => {
@@ -53,7 +61,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       );
     }
 
-    // 2. Honeypot 机器人拦截（如果蜜罐字段被填写，静默返回成功但不入库）
+    // 2. Honeypot 机器人拦截（如果蜜罐字段被填写，静默返回成功但不入库发信）
     if (payload.honeypot && payload.honeypot.trim().length > 0) {
       return new Response(
         JSON.stringify({
@@ -96,8 +104,8 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     const referer = request.headers.get('referer') || '';
     const ip = clientAddress || request.headers.get('x-forwarded-for') || 'Unknown';
 
-    // 5. 写入 Supabase inquiries 表（纯写入，避免触发 anon RLS SELECT 权限拦截）
-    const { error } = await supabase
+    // 5. 写入 Supabase inquiries 表（持久化存储）
+    const { error: dbError } = await supabase
       .from('inquiries')
       .insert([
         {
@@ -114,12 +122,12 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
           source_url: referer,
           ip_address: ip,
           user_agent: userAgent,
-          status: 'new', // 默认状态：new / pending / processed
+          status: 'new',
         },
       ]);
 
-    if (error) {
-      console.error('[Supabase Inquiry Error]:', error);
+    if (dbError) {
+      console.error('[Supabase Inquiry Error]:', dbError);
       return new Response(
         JSON.stringify({
           success: false,
@@ -129,7 +137,58 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
       );
     }
 
-    // 6. 返回成功响应
+    // 6. 自动发送邮件通知至 xuyilock@gmail.com
+    if (resend) {
+      try {
+        await resend.emails.send({
+          from: 'Lock Cylinder Inquiries <onboarding@resend.dev>',
+          to: [TARGET_ADMIN_EMAIL],
+          replyTo: email, // 管理员在 Gmail 中点击回复可直接回复客户
+          subject: `[New Inquiry] ${name} (${payload.country || 'Global'}) - ${payload.product_name || 'General Inquiry'}`,
+          html: `
+            <div style="font-family: Arial, sans-serif; max-width: 620px; margin: 0 auto; padding: 20px; border: 1px solid #e2e8f0; border-radius: 8px; background: #ffffff;">
+              <h2 style="color: #0f172a; margin-top: 0; border-bottom: 2px solid #2563eb; padding-bottom: 10px; font-size: 1.25rem;">
+                New B2B Lock Cylinder Technical Inquiry
+              </h2>
+              
+              <table style="width: 100%; border-collapse: collapse; margin-bottom: 20px; font-size: 14px;">
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; width: 140px; color: #475569;">Customer Name:</td>
+                  <td style="padding: 8px 0; color: #0f172a;">${name}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #475569;">Customer Email:</td>
+                  <td style="padding: 8px 0; color: #0f172a;"><a href="mailto:${email}" style="color: #2563eb; font-weight: 600;">${email}</a></td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #475569;">Country / Region:</td>
+                  <td style="padding: 8px 0; color: #0f172a;">${payload.country || 'Not specified'}</td>
+                </tr>
+                <tr>
+                  <td style="padding: 8px 0; font-weight: bold; color: #475569;">Inquiry Product:</td>
+                  <td style="padding: 8px 0; color: #0f172a;">${payload.product_name ? `${payload.product_name}` : 'General Factory Inquiry'}</td>
+                </tr>
+              </table>
+
+              <div style="background: #f8fafc; border-left: 4px solid #2563eb; padding: 15px; border-radius: 0 6px 6px 0; margin-bottom: 20px;">
+                <p style="margin: 0 0 8px 0; font-weight: bold; color: #334155; font-size: 13px;">Project Details / Message:</p>
+                <div style="color: #0f172a; line-height: 1.6; white-space: pre-wrap; font-size: 14px;">${message}</div>
+              </div>
+
+              <div style="font-size: 12px; color: #94a3b8; border-top: 1px solid #f1f5f9; padding-top: 12px; line-height: 1.5;">
+                <p style="margin: 3px 0;">Source Page: <a href="${referer}" style="color: #94a3b8;">${referer}</a></p>
+                <p style="margin: 3px 0;">IP Address: ${ip}</p>
+                <p style="margin: 3px 0;">Knowledge Base: <a href="https://knowledgebase.xuyilock.com" style="color: #2563eb;">knowledgebase.xuyilock.com</a></p>
+              </div>
+            </div>
+          `,
+        });
+      } catch (emailErr) {
+        console.error('[Resend Email Notification Failed]:', emailErr);
+      }
+    }
+
+    // 7. 返回成功响应
     return new Response(
       JSON.stringify({
         success: true,
