@@ -110,7 +110,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     </div>
   </section>
 
-  <!-- 6 Core Categories Grid 大区块 (带全宽独立背景大图 + 磨砂玻璃科技卡片) -->
+  <!-- 6 Core Categories Grid (浅色高透大背景图 + 水晶磨砂玻璃透视卡片) -->
   <section class="categories-section">
     <div class="container">
       <div class="section-header">
@@ -200,7 +200,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
                 url('/banners/home-hero.jpg') center center / cover no-repeat;
     color: #f8fafc;
     padding: 4.5rem 0 3.5rem 0;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #334155;
   }
   .hero-content {
     max-width: 900px;
@@ -285,13 +285,13 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     text-transform: uppercase;
   }
 
-  /* 核心：6 大分类大区块专属全宽背景图 + 暗色渐变遮罩 */
+  /* 核心：6 大分类大区块专属背景大图 + 浅白高透柔光遮罩 (82%~88%) */
   .categories-section {
     position: relative;
     padding: 5rem 0;
-    background: linear-gradient(135deg, rgba(11, 19, 41, 0.88) 0%, rgba(15, 23, 42, 0.92) 100%),
+    background: linear-gradient(135deg, rgba(255, 255, 255, 0.82) 0%, rgba(248, 250, 252, 0.88) 100%),
                 url('/banners/clusters-bg.jpg') center center / cover no-repeat;
-    border-bottom: 1px solid #1e293b;
+    border-bottom: 1px solid #e2e8f0;
   }
   .section-header {
     text-align: center;
@@ -299,14 +299,14 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     margin: 0 auto 3rem auto;
   }
   .section-title {
-    font-size: 2.2rem;
+    font-size: 2rem;
     font-weight: 800;
-    color: #ffffff;
-    margin-bottom: 0.6rem;
+    color: #0f172a; /* 恢复原版深黑标题 */
+    margin-bottom: 0.5rem;
   }
   .section-subtitle {
-    font-size: 1rem;
-    color: #94a3b8;
+    font-size: 0.95rem;
+    color: #64748b; /* 恢复原版副标灰 */
   }
   .categories-grid {
     display: grid;
@@ -314,83 +314,80 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     gap: 1.5rem;
   }
 
-  /* 磨砂玻璃科技卡片（Glassmorphism） */
+  /* 水晶磨砂玻璃透视卡片（Glassmorphism）：透视背景图同时确保文字清晰 */
   .category-card {
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: rgba(30, 41, 59, 0.65);
-    backdrop-filter: blur(12px);
-    -webkit-backdrop-filter: blur(12px);
-    border: 1px solid rgba(255, 255, 255, 0.08);
+    background: rgba(255, 255, 255, 0.68);
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.85);
     border-radius: 12px;
-    padding: 1.85rem;
+    padding: 1.75rem;
     text-decoration: none;
-    box-shadow: 0 8px 24px rgba(0, 0, 0, 0.3);
-    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background 0.25s ease;
+    box-shadow: 0 4px 20px -4px rgba(0, 0, 0, 0.05);
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease, background-color 0.25s ease;
   }
   .category-card:hover {
-    transform: translateY(-5px);
-    background: rgba(30, 41, 59, 0.85);
-    border-color: rgba(59, 130, 246, 0.6);
-    box-shadow: 0 16px 32px -8px rgba(0, 0, 0, 0.5), 0 0 24px rgba(59, 130, 246, 0.2);
+    transform: translateY(-4px);
+    background: rgba(255, 255, 255, 0.92);
+    box-shadow: 0 14px 28px -6px rgba(0, 0, 0, 0.1);
+    border-color: #93c5fd;
   }
 
-  /* 卡片角标：电光蓝 */
+  /* 原版角标：浅蓝底 + 品牌蓝字 */
   .cat-badge {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #38bdf8;
-    background: rgba(14, 165, 233, 0.15);
-    border: 1px solid rgba(56, 189, 248, 0.3);
-    padding: 0.25rem 0.55rem;
+    color: #2563eb;
+    background: rgba(239, 246, 255, 0.9);
+    border: 1px solid rgba(191, 219, 254, 0.7);
+    padding: 0.2rem 0.5rem;
     border-radius: 4px;
     text-transform: uppercase;
+    display: inline-block;
     letter-spacing: 0.04em;
   }
 
-  /* 卡片主标题：纯白 */
+  /* 原版主标题：深黑字，悬停变蓝 */
   .cat-title {
-    font-size: 1.3rem;
+    font-size: 1.25rem;
     font-weight: 700;
-    color: #f8fafc;
-    margin: 0.85rem 0 0.25rem 0;
+    color: #0f172a;
+    margin: 0.75rem 0 0.25rem 0;
     transition: color 0.2s ease;
   }
   .category-card:hover .cat-title {
-    color: #60a5fa;
+    color: #2563eb;
   }
 
-  /* 中文副标：冷银色 */
+  /* 原版中文副标：中灰字 */
   .cat-zh {
-    font-size: 0.88rem;
-    color: #94a3b8;
-    margin-bottom: 0.85rem;
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
     font-weight: 500;
   }
 
-  /* 技术描述：高亮银白 */
+  /* 原版描述正文：易读灰黑字 */
   .cat-desc {
     font-size: 0.88rem;
-    line-height: 1.6;
-    color: #cbd5e1;
+    line-height: 1.55;
+    color: #475569;
   }
 
-  /* 底部链接与箭头 */
+  /* 原版底部链接与箭头：品牌蓝 */
   .cat-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid rgba(255, 255, 255, 0.08);
-    margin-top: 1.35rem;
-    padding-top: 0.9rem;
-    font-size: 0.875rem;
+    border-top: 1px solid rgba(226, 232, 240, 0.8);
+    margin-top: 1.25rem;
+    padding-top: 0.85rem;
+    font-size: 0.85rem;
     font-weight: 600;
-    color: #38bdf8;
-    transition: color 0.2s ease;
-  }
-  .category-card:hover .cat-footer {
-    color: #60a5fa;
+    color: #2563eb;
   }
   .arrow {
     transition: transform 0.2s ease;
