@@ -141,7 +141,7 @@ export const POST: APIRoute = async ({ request, clientAddress }) => {
     if (resend) {
       try {
         await resend.emails.send({
-          from: 'Lock Cylinder Inquiries <onboarding@resend.dev>',
+          from: 'Lock Cylinder Inquiries <inquiry@xuyilock.com>',
           to: [TARGET_ADMIN_EMAIL],
           replyTo: email, // 管理员在 Gmail 中点击回复可直接回复客户
           subject: `[New Inquiry] ${name} (${payload.country || 'Global'}) - ${payload.product_name || 'General Inquiry'}`,
