@@ -2,6 +2,7 @@
 export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
+import InquiryForm from '../components/InquiryForm.astro';
 import { supabase } from '../lib/supabase';
 
 // 6 大核心锁芯采购与技术分类元数据
@@ -176,6 +177,16 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
           <p>Technical knowledge entries are being synchronized. Please check back shortly.</p>
         </div>
       )}
+    </div>
+  </section>
+
+  <!-- 底部 B2B 询盘表单区 -->
+  <section class="home-inquiry-section">
+    <div class="container">
+      <InquiryForm 
+        title="Inquire Direct Factory Architectural Hardware & Master Keying"
+        subtitle="Submit your engineering specifications or project volume requirements directly to our manufacturing engineers."
+      />
     </div>
   </section>
 </Layout>
@@ -418,10 +429,17 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     color: #64748b;
   }
 
+  .home-inquiry-section {
+    padding: 4.5rem 0;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+  }
+
   @media (max-width: 768px) {
     .hero-title { font-size: 1.85rem; }
     .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
     .search-form { flex-direction: column; }
     .search-btn { width: 100%; }
+    .home-inquiry-section { padding: 3rem 0; }
   }
 </style>

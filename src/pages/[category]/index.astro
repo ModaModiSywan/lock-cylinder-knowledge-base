@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import InquiryForm from '../../components/InquiryForm.astro';
 import { supabase } from '../../lib/supabase';
 
 const { category } = Astro.params;
@@ -152,6 +153,16 @@ const pageDesc = `${currentCat.desc} Browse complete technical documentation, si
       )}
     </div>
   </main>
+
+  <!-- 分类页底部 B2B 询盘表单区 -->
+  <section class="cat-inquiry-section">
+    <div class="container">
+      <InquiryForm 
+        title={`Request Quote & Technical Drawings for ${currentCat.title}`}
+        subtitle={`Direct factory engineering support for ${currentCat.zhTitle}. Custom cam offsets, finishes, and master key hierarchies supported.`}
+      />
+    </div>
+  </section>
 </Layout>
 
 <style>
@@ -348,5 +359,15 @@ const pageDesc = `${currentCat.desc} Browse complete technical documentation, si
     background: #2563eb;
     color: #ffffff;
     border-color: #2563eb;
+  }
+
+  .cat-inquiry-section {
+    padding: 4rem 0 4.5rem;
+    background: #f8fafc;
+    border-top: 1px solid #e2e8f0;
+  }
+
+  @media (max-width: 768px) {
+    .cat-inquiry-section { padding: 3rem 0; }
   }
 </style>

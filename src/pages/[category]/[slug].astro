@@ -3,6 +3,7 @@ export const prerender = false;
 
 import Layout from '../../layouts/Layout.astro';
 import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import InquiryForm from '../../components/InquiryForm.astro';
 import { supabase } from '../../lib/supabase';
 import { marked } from 'marked';
 
@@ -47,8 +48,10 @@ if (article.specs_data) {
 }
 
 interface FAQItem {
-  q: string;
-  a: string;
+  q?: string;
+  question?: string;
+  a?: string;
+  answer?: string;
 }
 let faqs: FAQItem[] = [];
 if (article.faqs_data) {
@@ -169,11 +172,11 @@ const schemaGraph = {
           <h2 class="section-h2">Frequently Asked Engineering & Selection Questions</h2>
           <div class="faqs-list">
             {faqs.map((faq: any, index) => (
-        <div class="faq-card">
-          <h3 class="faq-question">Q{index + 1}: {faq.question || faq.q}</h3>
-          <p class="faq-answer">{faq.answer || faq.a}</p>
-        </div>
-      ))}
+              <div class="faq-card">
+                <h3 class="faq-question">Q{index + 1}: {faq.question || faq.q}</h3>
+                <p class="faq-answer">{faq.answer || faq.a}</p>
+              </div>
+            ))}
           </div>
         </section>
       )}
@@ -192,8 +195,25 @@ const schemaGraph = {
             <li>✓ OEM / ODM & Tailored Cam Configurations</li>
             <li>✓ PVD Coating & Custom Finishes</li>
           </ul>
-          <a href="/quote" class="cta-primary-btn">Request B2B Quote / Samples &rarr;</a>
+          <!-- 1. 跳转至官网真实询盘页 -->
+          <a 
+            href="https://xuyilock.com/inquire-us-or-request-a-quote/" 
+            target="_blank" 
+            rel="noopener noreferrer" 
+            class="cta-primary-btn"
+          >
+            Request B2B Quote / Samples &rarr;
+          </a>
         </div>
+
+        <!-- 2. 侧边栏紧凑版在线询盘表单（含 30 组随机数学 Quiz 验证） -->
+        <InquiryForm 
+          isSidebar={true} 
+          title="Quick Technical RFQ"
+          subtitle="Direct factory inquiry for this model."
+          productName={article.title}
+          productSlug={article.slug}
+        />
 
         {relatedArticles && relatedArticles.length > 0 && (
           <div class="related-card">
@@ -226,7 +246,7 @@ const schemaGraph = {
     margin: 0 auto;
     padding: 1.5rem 1.5rem 4rem 1.5rem;
     display: grid;
-    grid-template-columns: minmax(0, 1fr) 320px;
+    grid-template-columns: minmax(0, 1fr) 340px;
     gap: 2rem;
     align-items: start;
   }

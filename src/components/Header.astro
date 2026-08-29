@@ -30,9 +30,14 @@ const currentPath = Astro.url.pathname;
       })}
     </nav>
 
-    <!-- Header CTA Button -->
+    <!-- Header CTA Button（已更新为跳转至官网询盘页面） -->
     <div class="nav-actions">
-      <a href="/quote" class="quote-btn">
+      <a 
+        href="https://xuyilock.com/inquire-us-or-request-a-quote/" 
+        target="_blank" 
+        rel="noopener noreferrer" 
+        class="quote-btn"
+      >
         <span class="quote-text-full">Request a Quote &rarr;</span>
         <span class="quote-text-mobile">Quote &rarr;</span>
       </a>
@@ -142,7 +147,7 @@ const currentPath = Astro.url.pathname;
   }
 
   @media (max-width: 768px) {
-    .nav-links { display: none; } /* 移动端建议折叠至汉堡菜单或底部导航 */
+    .nav-links { display: none; }
     .quote-text-full { display: none; }
     .quote-text-mobile { display: inline; }
     .quote-btn { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
