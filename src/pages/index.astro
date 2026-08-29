@@ -110,7 +110,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     </div>
   </section>
 
-  <!-- 6 Core Categories Grid (带产品实物图与正片叠底遮罩) -->
+  <!-- 6 Core Categories Grid (深色工业面板 + 居中实物背景与柔光遮罩) -->
   <section class="categories-section">
     <div class="container">
       <div class="section-header">
@@ -121,13 +121,13 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
       <div class="categories-grid">
         {CATEGORIES.map((cat) => (
           <a href={`/${cat.slug}`} class="category-card">
-            <!-- 1. 背景图与柔光渐变遮罩层 (位于底层 z-index: 1) -->
+            <!-- 1. 居中背景图片与径向暗光遮罩 (z-index: 1) -->
             <div class="cat-bg-wrapper">
               <img src={`/categories/${cat.slug}.jpg`} alt={cat.title} class="cat-bg-img" loading="lazy" />
               <div class="cat-bg-overlay"></div>
             </div>
 
-            <!-- 2. 卡片文字内容 (位于上层 z-index: 2, 100% 清晰可读) -->
+            <!-- 2. 卡片文字内容 (z-index: 2, 纯白/银色高亮文字) -->
             <div class="category-card-body">
               <div class="cat-header">
                 <span class="cat-badge">{cat.slug}</span>
@@ -137,7 +137,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
               <p class="cat-desc">{cat.desc}</p>
             </div>
 
-            <!-- 3. 底部技术目录导航 -->
+            <!-- 3. 底部科技蓝链接 -->
             <div class="cat-footer">
               <span>View Technical Directory</span>
               <span class="arrow">&rarr;</span>
@@ -201,13 +201,14 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
 </Layout>
 
 <style>
+  /* Hero 区域 */
   .hero-section {
     position: relative;
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.92) 100%),
                 url('/banners/home-hero.jpg') center center / cover no-repeat;
     color: #f8fafc;
     padding: 4.5rem 0 3.5rem 0;
-    border-bottom: 1px solid #334155;
+    border-bottom: 1px solid #1e293b;
   }
   .hero-content {
     max-width: 900px;
@@ -292,9 +293,11 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     text-transform: uppercase;
   }
 
+  /* 6 大分类区域（深色科技蓝黑背景） */
   .categories-section {
-    padding: 4rem 0;
-    background: #f8fafc;
+    padding: 4.5rem 0;
+    background: #0b1329;
+    border-bottom: 1px solid #1e293b;
   }
   .section-header {
     text-align: center;
@@ -302,14 +305,14 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     margin: 0 auto 2.5rem auto;
   }
   .section-title {
-    font-size: 1.85rem;
+    font-size: 2rem;
     font-weight: 800;
-    color: #0f172a;
+    color: #ffffff;
     margin-bottom: 0.5rem;
   }
   .section-subtitle {
     font-size: 0.95rem;
-    color: #64748b;
+    color: #94a3b8;
   }
   .categories-grid {
     display: grid;
@@ -317,112 +320,150 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     gap: 1.5rem;
   }
 
-  /* 卡片容器：确保溢出隐藏并建立相对定位 */
+  /* 深色卡片主体面板 */
   .category-card {
     position: relative;
     overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
-    background: #ffffff;
-    border: 1px solid #e2e8f0;
+    background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+    border: 1px solid #334155;
     border-radius: 12px;
     padding: 1.75rem;
     text-decoration: none;
+    box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
     transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
   .category-card:hover {
     transform: translateY(-4px);
-    box-shadow: 0 14px 25px -5px rgba(0, 0, 0, 0.08);
-    border-color: #93c5fd;
+    border-color: #3b82f6;
+    box-shadow: 0 16px 30px -10px rgba(0, 0, 0, 0.5), 0 0 20px rgba(59, 130, 246, 0.2);
   }
 
-  /* 核心分层：文字与按钮置于 z-index: 2 上层 */
+  /* 核心文字分层：z-index: 2 置于遮罩层上方 */
   .category-card-body,
   .cat-footer {
     position: relative;
     z-index: 2;
   }
 
-  /* 背景图与遮罩层包装器：定位在右下角 */
+  /* 居中背景图片与遮罩包装器 (绝对充满卡片) */
   .cat-bg-wrapper {
     position: absolute;
-    right: -10px;
-    bottom: -10px;
-    width: 155px;
-    height: 155px;
+    inset: 0;
+    width: 100%;
+    height: 100%;
     pointer-events: none;
     z-index: 1;
     overflow: hidden;
-    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
   }
 
-  /* 实物图片：正片叠底溶图 + 16% 低透明度 */
+  /* 实物图片：居中放置 + 75% 比例 + 柔和暗色半透 */
   .cat-bg-img {
-    width: 100%;
-    height: 100%;
-    object-fit: cover;
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    transform: translate(-50%, -50%);
+    width: 78%;
+    height: 78%;
+    object-fit: contain;
     opacity: 0.16;
-    mix-blend-mode: multiply;
-    filter: grayscale(15%);
-    transition: transform 0.4s ease, opacity 0.3s ease, filter 0.3s ease;
+    filter: brightness(1.15) contrast(1.1);
+    transition: transform 0.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.3s ease, filter 0.3s ease;
   }
 
-  /* 径向柔光遮罩：左上方强白遮罩保障文字对比度，右下方透出图片 */
+  /* 径向暗色遮罩：中心微透出产品，四周加深保障文字最高清晰度 */
   .cat-bg-overlay {
     position: absolute;
     inset: 0;
-    background: radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.85) 85%);
+    background: radial-gradient(circle at center, rgba(30, 41, 59, 0.65) 0%, rgba(15, 23, 42, 0.94) 85%);
     pointer-events: none;
   }
 
-  /* 悬停微动效：图片浮现变亮 */
+  /* 鼠标悬停时的动效：图片浮现变亮并微放大 */
   .category-card:hover .cat-bg-img {
     opacity: 0.32;
-    filter: grayscale(0%);
-    transform: scale(1.08) rotate(1deg);
+    transform: translate(-50%, -50%) scale(1.08);
+    filter: brightness(1.3) contrast(1.15);
   }
 
+  /* 角标：科技电光蓝 */
   .cat-badge {
     font-size: 0.75rem;
     font-weight: 700;
-    color: #2563eb;
-    background: #eff6ff;
-    padding: 0.2rem 0.5rem;
+    color: #38bdf8;
+    background: rgba(14, 165, 233, 0.15);
+    border: 1px solid rgba(56, 189, 248, 0.3);
+    padding: 0.25rem 0.55rem;
     border-radius: 4px;
     text-transform: uppercase;
+    letter-spacing: 0.04em;
   }
+
+  /* 主标题：纯白高光 */
   .cat-title {
-    font-size: 1.25rem;
+    font-size: 1.28rem;
     font-weight: 700;
-    color: #0f172a;
-    margin: 0.75rem 0 0.25rem 0;
+    color: #f8fafc;
+    margin: 0.85rem 0 0.25rem 0;
+    transition: color 0.2s ease;
   }
+  .category-card:hover .cat-title {
+    color: #60a5fa;
+  }
+
+  /* 中文副标题：冷银金属色 */
   .cat-zh {
-    font-size: 0.85rem;
-    color: #64748b;
+    font-size: 0.88rem;
+    color: #94a3b8;
     margin-bottom: 0.75rem;
+    font-weight: 500;
   }
+
+  /* 描述文字：高亮银白 */
   .cat-desc {
     font-size: 0.88rem;
-    line-height: 1.5;
-    color: #475569;
+    line-height: 1.6;
+    color: #cbd5e1;
   }
+
+  /* 底部链接与箭头：电光蓝 */
   .cat-footer {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    border-top: 1px solid #f1f5f9;
+    border-top: 1px solid #334155;
     margin-top: 1.25rem;
-    padding-top: 0.85rem;
-    font-size: 0.85rem;
+    padding-top: 0.9rem;
+    font-size: 0.875rem;
     font-weight: 600;
-    color: #2563eb;
+    color: #38bdf8;
+    transition: color 0.2s ease;
+  }
+  .category-card:hover .cat-footer {
+    color: #60a5fa;
+  }
+  .arrow {
+    transition: transform 0.2s ease;
+  }
+  .category-card:hover .arrow {
+    transform: translateX(4px);
   }
 
+  /* 最新文章列表区域 */
   .latest-section {
-    padding: 4rem 0;
+    padding: 4.5rem 0;
     background: #ffffff;
+  }
+  .latest-section .section-title {
+    color: #0f172a;
+  }
+  .latest-section .section-subtitle {
+    color: #64748b;
   }
   .articles-grid {
     display: grid;
@@ -488,6 +529,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     color: #64748b;
   }
 
+  /* 底部询盘区 */
   .home-inquiry-section {
     padding: 4.5rem 0;
     background: #f8fafc;
