@@ -3,8 +3,53 @@ export const prerender = false;
 
 import Layout from '../layouts/Layout.astro';
 import InquiryForm from '../components/InquiryForm.astro';
-import CategoryGrid from '../components/CategoryGrid.astro';
 import { supabase } from '../lib/supabase';
+
+// 6 大核心锁芯采购与技术分类元数据
+const CATEGORIES = [
+  {
+    slug: 'types-functions',
+    title: 'Types & Configurations',
+    zhTitle: '结构与功能分类',
+    desc: 'Euro profile double, half/single, thumbturn, BK bathroom privacy, and asymmetric offset cylinders.',
+    icon: 'fa-cube'
+  },
+  {
+    slug: 'materials-finishes',
+    title: 'Materials & Finishes',
+    zhTitle: '材料与表面处理',
+    desc: 'Solid extruded H59/H62 brass, Zamak zinc alloy, PVD coating, Satin Nickel, Matte Black & salt spray ratings.',
+    icon: 'fa-layer-group'
+  },
+  {
+    slug: 'keying-systems',
+    title: 'Keying Systems & Master Keys',
+    zhTitle: '钥匙管理系统',
+    desc: '2 to 5-level Master Key (MK/GMK/GGMK), Keyed Alike (KA), Keyed Different (KD), and 2-in-1 construction balls.',
+    icon: 'fa-key'
+  },
+  {
+    slug: 'security-mechanisms',
+    title: 'Security & Anti-Attack',
+    zhTitle: '防盗结构与工程',
+    desc: 'Sacrificial anti-snap grooves, hardened steel anti-drill pins, anti-bump spools, and anti-plug pulling collars.',
+    icon: 'fa-shield-halved'
+  },
+  {
+    slug: 'standards-testing',
+    title: 'Standards & Compliance',
+    zhTitle: '测试标准与认证',
+    desc: 'EN 1303:2015 8-digit codes, ANSI/BHMA Grade 1, DIN 18252, Chinese Class C, and UL 10C fire ratings.',
+    icon: 'fa-certificate'
+  },
+  {
+    slug: 'sizing-installation',
+    title: 'Sizing & Cam Selection',
+    zhTitle: '尺寸测量与安装选型',
+    desc: 'A/B dimension calculation, DIN 30° standard cams, 10/13/14-tooth cogwheels, and narrow-stile profile fitment.',
+    icon: 'fa-ruler-combined'
+  }
+];
 
 // 从表 lock_cylinder_entries 查询最新发布的 9 篇文章
 const { data: latestArticles, error } = await supabase
@@ -65,8 +110,34 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     </div>
   </section>
 
-  <!-- 6 Core Categories Grid (带专属工程矢量背景图案与动效) -->
-  <CategoryGrid />
+  <!-- 6 Core Categories Grid -->
+  <section class="categories-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Technical Knowledge Clusters</h2>
+        <p class="section-subtitle">Explore architectural lock cylinders by mechanical engineering classification and standards.</p>
+      </div>
+
+      <div class="categories-grid">
+        {CATEGORIES.map((cat) => (
+          <a href={`/${cat.slug}`} class="category-card">
+            <div class="category-card-body">
+              <div class="cat-header">
+                <span class="cat-badge">{cat.slug}</span>
+              </div>
+              <h3 class="cat-title">{cat.title}</h3>
+              <p class="cat-zh">{cat.zhTitle}</p>
+              <p class="cat-desc">{cat.desc}</p>
+            </div>
+            <div class="cat-footer">
+              <span>View Technical Directory</span>
+              <span class="arrow">&rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
 
   <!-- Latest Engineering Articles -->
   <section class="latest-section">
@@ -123,6 +194,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
 <style>
   .hero-section {
     position: relative;
+    /* 核心：85%~90% 深色渐变遮罩 + 背景大图 */
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.92) 100%),
                 url('/banners/home-hero.jpg') center center / cover no-repeat;
     color: #f8fafc;
@@ -212,9 +284,9 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     text-transform: uppercase;
   }
 
-  .latest-section {
+  .categories-section {
     padding: 4rem 0;
-    background: #ffffff;
+    background: #f8fafc;
   }
   .section-header {
     text-align: center;
@@ -230,6 +302,68 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
   .section-subtitle {
     font-size: 0.95rem;
     color: #64748b;
+  }
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.75rem;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+    border-color: #93c5fd;
+  }
+  .cat-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .cat-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0.75rem 0 0.25rem 0;
+  }
+  .cat-zh {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+  }
+  .cat-desc {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #475569;
+  }
+  .cat-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 1.25rem;
+    padding-top: 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2563eb;
+  }
+
+  .latest-section {
+    padding: 4rem 0;
+    background: #ffffff;
   }
   .articles-grid {
     display: grid;
