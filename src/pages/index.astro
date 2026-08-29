@@ -110,7 +110,7 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     </div>
   </section>
 
-  <!-- 6 Core Categories Grid -->
+  <!-- 6 Core Categories Grid (带产品实物图与正片叠底遮罩) -->
   <section class="categories-section">
     <div class="container">
       <div class="section-header">
@@ -121,6 +121,13 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
       <div class="categories-grid">
         {CATEGORIES.map((cat) => (
           <a href={`/${cat.slug}`} class="category-card">
+            <!-- 1. 背景图与柔光渐变遮罩层 (位于底层 z-index: 1) -->
+            <div class="cat-bg-wrapper">
+              <img src={`/categories/${cat.slug}.jpg`} alt={cat.title} class="cat-bg-img" loading="lazy" />
+              <div class="cat-bg-overlay"></div>
+            </div>
+
+            <!-- 2. 卡片文字内容 (位于上层 z-index: 2, 100% 清晰可读) -->
             <div class="category-card-body">
               <div class="cat-header">
                 <span class="cat-badge">{cat.slug}</span>
@@ -129,6 +136,8 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
               <p class="cat-zh">{cat.zhTitle}</p>
               <p class="cat-desc">{cat.desc}</p>
             </div>
+
+            <!-- 3. 底部技术目录导航 -->
             <div class="cat-footer">
               <span>View Technical Directory</span>
               <span class="arrow">&rarr;</span>
@@ -194,7 +203,6 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
 <style>
   .hero-section {
     position: relative;
-    /* 核心：85%~90% 深色渐变遮罩 + 背景大图 */
     background: linear-gradient(135deg, rgba(15, 23, 42, 0.88) 0%, rgba(30, 41, 59, 0.92) 100%),
                 url('/banners/home-hero.jpg') center center / cover no-repeat;
     color: #f8fafc;
@@ -308,22 +316,73 @@ const pageDesc = "Authoritative technical guides, mechanical specifications, EN 
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 1.5rem;
   }
+
+  /* 卡片容器：确保溢出隐藏并建立相对定位 */
   .category-card {
+    position: relative;
+    overflow: hidden;
     display: flex;
     flex-direction: column;
     justify-content: space-between;
     background: #ffffff;
     border: 1px solid #e2e8f0;
-    border-radius: 8px;
+    border-radius: 12px;
     padding: 1.75rem;
     text-decoration: none;
-    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+    transition: transform 0.25s ease, box-shadow 0.25s ease, border-color 0.25s ease;
   }
   .category-card:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+    transform: translateY(-4px);
+    box-shadow: 0 14px 25px -5px rgba(0, 0, 0, 0.08);
     border-color: #93c5fd;
   }
+
+  /* 核心分层：文字与按钮置于 z-index: 2 上层 */
+  .category-card-body,
+  .cat-footer {
+    position: relative;
+    z-index: 2;
+  }
+
+  /* 背景图与遮罩层包装器：定位在右下角 */
+  .cat-bg-wrapper {
+    position: absolute;
+    right: -10px;
+    bottom: -10px;
+    width: 155px;
+    height: 155px;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+    border-radius: 12px;
+  }
+
+  /* 实物图片：正片叠底溶图 + 16% 低透明度 */
+  .cat-bg-img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 0.16;
+    mix-blend-mode: multiply;
+    filter: grayscale(15%);
+    transition: transform 0.4s ease, opacity 0.3s ease, filter 0.3s ease;
+  }
+
+  /* 径向柔光遮罩：左上方强白遮罩保障文字对比度，右下方透出图片 */
+  .cat-bg-overlay {
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(circle at bottom right, rgba(255, 255, 255, 0.05) 0%, rgba(255, 255, 255, 0.85) 85%);
+    pointer-events: none;
+  }
+
+  /* 悬停微动效：图片浮现变亮 */
+  .category-card:hover .cat-bg-img {
+    opacity: 0.32;
+    filter: grayscale(0%);
+    transform: scale(1.08) rotate(1deg);
+  }
+
   .cat-badge {
     font-size: 0.75rem;
     font-weight: 700;
