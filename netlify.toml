@@ -1,0 +1,13 @@
+[build]
+  command = "npm run build"
+  publish = "dist"
+
+[build.environment]
+  NODE_VERSION = "22"
+
+# 301 权威重定向：将所有 .netlify.app 访问自动跳转到正式域名，汇聚 Google SEO 权重
+[[redirects]]
+  from = "https://lock-cylinder-kb.netlify.app/*"
+  to = "https://knowledgebase.xuyilock.com/:splat"
+  status = 301
+  force = true
