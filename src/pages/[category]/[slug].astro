@@ -1,0 +1,487 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { supabase } from '../../lib/supabase';
+import { marked } from 'marked';
+
+const { category, slug } = Astro.params;
+
+if (!category || !slug) {
+  return Astro.redirect('/404');
+}
+
+// 1. 从表 lock_cylinder_entries 查询单篇文章详情（移除不存在的 is_published）
+const { data: article, error } = await supabase
+  .from('lock_cylinder_entries')
+  .select('*')
+  .eq('slug', slug)
+  .single();
+
+if (error || !article) {
+  console.error(`Article [${slug}] not found in lock_cylinder_entries:`, error);
+  return Astro.redirect('/404');
+}
+
+// 2. 从表 lock_cylinder_entries 查询同分类推荐文章
+const { data: relatedArticles } = await supabase
+  .from('lock_cylinder_entries')
+  .select('title, slug, category_slug, meta_description')
+  .eq('category_slug', category)
+  .neq('slug', slug)
+  .limit(5);
+
+// 3. Markdown 正文安全解析（兼容 content 与 content_markdown 字段）
+const rawMarkdown = (article.content || article.content_markdown || '')
+  .replace(/\\n/g, '\n')
+  .replace(/\\r/g, '');
+const htmlContent = marked.parse(rawMarkdown);
+
+// 4. 解析 Specs Data (JSONB) 与 FAQs Data (JSONB)
+let specs: Record<string, string> = {};
+if (article.specs_data) {
+  specs = typeof article.specs_data === 'string' 
+    ? JSON.parse(article.specs_data) 
+    : article.specs_data;
+}
+
+interface FAQItem {
+  q: string;
+  a: string;
+}
+let faqs: FAQItem[] = [];
+if (article.faqs_data) {
+  faqs = typeof article.faqs_data === 'string'
+    ? JSON.parse(article.faqs_data)
+    : article.faqs_data;
+}
+
+// 5. 组装 Schema.org JSON-LD 结构化数据 (TechArticle + FAQPage + BreadcrumbList)
+const canonicalUrl = Astro.url.href;
+const schemaGraph = {
+  "@context": "https://schema.org",
+  "@graph": [
+    {
+      "@type": "TechArticle",
+      "@id": `${canonicalUrl}#article`,
+      "headline": article.title,
+      "description": article.meta_description || article.title,
+      "proficiencyLevel": "Expert",
+      "articleSection": category,
+      "inLanguage": "en-US",
+      "mainEntityOfPage": canonicalUrl,
+      "datePublished": article.created_at || "2026-08-01T00:00:00Z"
+    },
+    {
+      "@type": "BreadcrumbList",
+      "itemListElement": [
+        {
+          "@type": "ListItem",
+          "position": 1,
+          "name": "Home",
+          "item": Astro.site ? Astro.site.href : "/"
+        },
+        {
+          "@type": "ListItem",
+          "position": 2,
+          "name": category,
+          "item": `/${category}`
+        },
+        {
+          "@type": "ListItem",
+          "position": 3,
+          "name": article.title,
+          "item": canonicalUrl
+        }
+      ]
+    },
+    ...(faqs.length > 0 ? [{
+      "@type": "FAQPage",
+      "@id": `${canonicalUrl}#faq`,
+      "mainEntity": faqs.map((faq: any) => ({
+        "@type": "Question",
+        "name": faq.question || faq.q,
+        "acceptedAnswer": {
+          "@type": "Answer",
+          "text": faq.answer || faq.a
+        }
+      }))
+    }] : [])
+  ]
+};
+---
+
+<Layout 
+  title={article.meta_title || `${article.title} | Lock Cylinder Technical Spec`}
+  description={article.meta_description || article.title}
+  schemaJson={schemaGraph}
+  canonicalUrl={canonicalUrl}
+>
+  <div class="container breadcrumb-wrap">
+    <Breadcrumbs 
+      items={[
+        { name: category, url: `/${category}` },
+        { name: article.title }
+      ]} 
+    />
+  </div>
+
+  <!-- 1200px 黄金阅读宽度 + minmax(0, 1fr) 防撑爆栅格 -->
+  <main class="detail-container">
+    <!-- 主文章卡片 -->
+    <article class="article-card">
+      <header class="article-header">
+        <a href={`/${category}`} class="cat-tag">{category}</a>
+        <h1 class="article-title">{article.title}</h1>
+        {article.meta_description && (
+          <div class="short-definition-box">
+            <strong>Engineering Overview:</strong> {article.meta_description}
+          </div>
+        )}
+      </header>
+
+      <!-- 规格参数表 (Specs Data) -->
+      {Object.keys(specs).length > 0 && (
+        <section class="specs-section">
+          <h2 class="section-h2">Technical & Engineering Specifications</h2>
+          <div class="specs-table-wrapper">
+            <table class="specs-table">
+              <tbody>
+                {Object.entries(specs).map(([key, value]) => (
+                  <tr>
+                    <th scope="row" class="spec-label">{key}</th>
+                    <td class="spec-value">{value}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </section>
+      )}
+
+      <!-- Markdown 正文渲染区 -->
+      <section class="prose-content" set:html={htmlContent} />
+
+      <!-- FAQ 结构化问答区 -->
+      {faqs.length > 0 && (
+        <section class="faqs-section">
+          <h2 class="section-h2">Frequently Asked Engineering & Selection Questions</h2>
+          <div class="faqs-list">
+            {faqs.map((faq: any, index) => (
+        <div class="faq-card">
+          <h3 class="faq-question">Q{index + 1}: {faq.question || faq.q}</h3>
+          <p class="faq-answer">{faq.answer || faq.a}</p>
+        </div>
+      ))}
+          </div>
+        </section>
+      )}
+    </article>
+
+    <!-- 右侧吸顶 B2B 转化侧边栏 -->
+    <aside class="sidebar-wrapper">
+      <div class="sticky-cta">
+        <div class="cta-card">
+          <h3 class="cta-title">Custom Lock Cylinders & Master Key Suites</h3>
+          <p class="cta-text">
+            Direct factory manufacturing with H59 brass cores, EN 1303 compliance, and 2-5 level master key engineering matrices.
+          </p>
+          <ul class="cta-features">
+            <li>✓ Custom KD / KA / Master Key Systems</li>
+            <li>✓ OEM / ODM & Tailored Cam Configurations</li>
+            <li>✓ PVD Coating & Custom Finishes</li>
+          </ul>
+          <a href="/quote" class="cta-primary-btn">Request B2B Quote / Samples &rarr;</a>
+        </div>
+
+        {relatedArticles && relatedArticles.length > 0 && (
+          <div class="related-card">
+            <h4 class="related-title">Related Technical Guides</h4>
+            <ul class="related-list">
+              {relatedArticles.map((rel) => (
+                <li class="related-item">
+                  <a href={`/${rel.category_slug}/${rel.slug}`} class="related-link">
+                    {rel.title}
+                  </a>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </div>
+    </aside>
+  </main>
+</Layout>
+
+<style>
+  .breadcrumb-wrap {
+    padding-top: 1rem;
+  }
+
+  /* 核心防撑爆栅格定义 */
+  .detail-container {
+    width: 100%;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1.5rem 1.5rem 4rem 1.5rem;
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) 320px;
+    gap: 2rem;
+    align-items: start;
+  }
+
+  .article-card {
+    min-width: 0; /* 关键：确保在移动端和窄屏下允许子元素压缩，防止 CSS Grid 撑爆 */
+    width: 100%;
+    max-width: 100%;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 2.5rem;
+  }
+
+  .cat-tag {
+    display: inline-block;
+    padding: 0.2rem 0.5rem;
+    background: #f1f5f9;
+    color: #475569;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    text-decoration: none;
+    margin-bottom: 0.75rem;
+  }
+  .article-title {
+    font-size: 2.25rem;
+    line-height: 1.25;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 1.25rem;
+  }
+  .short-definition-box {
+    background: #f8fafc;
+    border-left: 4px solid #2563eb;
+    padding: 1rem 1.25rem;
+    border-radius: 0 6px 6px 0;
+    font-size: 0.95rem;
+    line-height: 1.6;
+    color: #334155;
+    margin-bottom: 2rem;
+  }
+
+  .section-h2 {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 2.5rem 0 1.25rem 0;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+
+  /* 规格参数表 */
+  .specs-table-wrapper {
+    width: 100%;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    margin-bottom: 2rem;
+  }
+  .specs-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9rem;
+  }
+  .specs-table th, .specs-table td {
+    padding: 0.75rem 1rem;
+    border: 1px solid #e2e8f0;
+  }
+  .spec-label {
+    background: #f8fafc;
+    color: #475569;
+    text-align: left;
+    font-weight: 600;
+    width: 35%;
+  }
+  .spec-value {
+    color: #0f172a;
+    word-break: break-word;
+  }
+
+  /* 正文富文本样式 */
+  .prose-content {
+    line-height: 1.8;
+    color: #334155;
+    font-size: 1rem;
+  }
+  .prose-content :global(h2) {
+    font-size: 1.45rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 2rem 0 1rem 0;
+  }
+  .prose-content :global(h3) {
+    font-size: 1.2rem;
+    font-weight: 600;
+    color: #1e293b;
+    margin: 1.5rem 0 0.75rem 0;
+  }
+  .prose-content :global(p) {
+    margin-bottom: 1.25rem;
+  }
+  .prose-content :global(ul), .prose-content :global(ol) {
+    margin: 1rem 0 1.25rem 1.5rem;
+  }
+  .prose-content :global(li) {
+    margin-bottom: 0.5rem;
+  }
+  .prose-content :global(table) {
+    width: 100%;
+    margin: 1.5rem 0;
+    border-collapse: collapse;
+  }
+  .prose-content :global(th), .prose-content :global(td) {
+    border: 1px solid #cbd5e1;
+    padding: 0.6rem 0.85rem;
+    font-size: 0.875rem;
+    word-break: break-word;
+  }
+  .prose-content :global(th) {
+    background: #f1f5f9;
+    font-weight: 600;
+  }
+  .prose-content :global(a) {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+
+  /* FAQs 样式 */
+  .faqs-list {
+    display: flex;
+    flex-direction: column;
+    gap: 1.25rem;
+  }
+  .faq-card {
+    background: #f8fafc;
+    border: 1px solid #e2e8f0;
+    border-radius: 6px;
+    padding: 1.25rem;
+  }
+  .faq-question {
+    font-size: 1.05rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+  }
+  .faq-answer {
+    font-size: 0.925rem;
+    line-height: 1.6;
+    color: #475569;
+  }
+
+  /* 侧边栏 CTA */
+  .sidebar-wrapper {
+    width: 100%;
+  }
+  .sticky-cta {
+    position: sticky;
+    top: 5rem;
+    display: flex;
+    flex-direction: column;
+    gap: 1.5rem;
+  }
+  .cta-card {
+    background: #0f172a;
+    color: #f8fafc;
+    border-radius: 8px;
+    padding: 1.75rem;
+  }
+  .cta-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.3;
+    margin-bottom: 0.75rem;
+    color: #ffffff;
+  }
+  .cta-text {
+    font-size: 0.875rem;
+    line-height: 1.5;
+    color: #cbd5e1;
+    margin-bottom: 1rem;
+  }
+  .cta-features {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.25rem 0;
+    font-size: 0.825rem;
+    color: #93c5fd;
+  }
+  .cta-features li {
+    margin-bottom: 0.4rem;
+  }
+  .cta-primary-btn {
+    display: block;
+    text-align: center;
+    background: #2563eb;
+    color: #ffffff;
+    padding: 0.75rem 1rem;
+    font-weight: 600;
+    font-size: 0.875rem;
+    border-radius: 6px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+  }
+  .cta-primary-btn:hover {
+    background: #1d4ed8;
+  }
+
+  .related-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+  }
+  .related-title {
+    font-size: 1rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 0.85rem;
+    padding-bottom: 0.5rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .related-list {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+  }
+  .related-item {
+    margin-bottom: 0.75rem;
+  }
+  .related-link {
+    font-size: 0.875rem;
+    color: #334155;
+    text-decoration: none;
+    line-height: 1.4;
+  }
+  .related-link:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+
+  @media (max-width: 900px) {
+    .detail-container {
+      grid-template-columns: minmax(0, 1fr);
+      padding: 1rem;
+      gap: 1.5rem;
+    }
+    .article-card {
+      padding: 1.5rem;
+    }
+    .sticky-cta {
+      position: static;
+    }
+    .article-title {
+      font-size: 1.75rem;
+    }
+  }
+</style>

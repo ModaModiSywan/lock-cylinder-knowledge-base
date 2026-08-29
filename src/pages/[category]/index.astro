@@ -1,0 +1,333 @@
+---
+export const prerender = false;
+
+import Layout from '../../layouts/Layout.astro';
+import Breadcrumbs from '../../components/Breadcrumbs.astro';
+import { supabase } from '../../lib/supabase';
+
+const { category } = Astro.params;
+
+// 6 大核心锁芯分类元数据字典
+const CATEGORY_MAP: Record<string, { title: string; zhTitle: string; desc: string }> = {
+  'types-functions': {
+    title: 'Mechanical Types & Configurations',
+    zhTitle: '锁芯结构与功能分类',
+    desc: 'Technical engineering specifications for Euro profile double key cylinders, single/half exit cylinders, thumbturn models, and BK bathroom privacy cylinders.'
+  },
+  'materials-finishes': {
+    title: 'Materials & Surface Treatments',
+    zhTitle: '材料与表面处理工艺',
+    desc: 'Solid extruded H59/H62 brass metallurgy, Zamak zinc alloy comparisons, PVD coatings, Satin Nickel, Matte Black, and ASTM B117 salt spray ratings.'
+  },
+  'keying-systems': {
+    title: 'Keying Systems & Master Key Hierarchy',
+    zhTitle: '钥匙管理与主钥匙系统',
+    desc: 'Engineering guides for multi-level Master Key systems (MK, GMK, GGMK up to 5 levels), Keyed-Alike suites, and 2-in-1 construction key ball-drop mechanisms.'
+  },
+  'security-mechanisms': {
+    title: 'Security & Anti-Attack Engineering',
+    zhTitle: '安全防盗结构与工程机制',
+    desc: 'Deep dives into sacrificial anti-snap grooves, hardened tungsten anti-drill arrays, mushroom/spool anti-pick pins, and anti-plug pulling reinforcements.'
+  },
+  'standards-testing': {
+    title: 'Standards, Testing & Compliance',
+    zhTitle: '国际测试标准与行业认证',
+    desc: 'Compliance analyses for EN 1303:2015 8-digit rating codes, ANSI/BHMA A156.5 Grade 1 benchmarks, DIN 18252, and UL 10C fire door hardware ratings.'
+  },
+  'sizing-installation': {
+    title: 'Sizing, Cam Types & Installation',
+    zhTitle: '尺寸测量与安装选型指南',
+    desc: 'Precise A/B dimension measurement formulas, DIN 30° standard cams, 10/13/14-tooth cogwheels, and narrow-stile thermal break profile installations.'
+  }
+};
+
+const currentCat = category ? CATEGORY_MAP[category] : null;
+
+// 若请求的 category 不在 6 大分类内，返回 404
+if (!currentCat || !category) {
+  return Astro.redirect('/404');
+}
+
+// 分页处理
+const PAGE_SIZE = 12;
+const currentPage = Math.max(1, parseInt(Astro.url.searchParams.get('page') || '1', 10));
+const from = (currentPage - 1) * PAGE_SIZE;
+const to = from + PAGE_SIZE - 1;
+
+// 从表 lock_cylinder_entries 查询对应分类下的文章与总条数
+const { data: entries, count, error } = await supabase
+  .from('lock_cylinder_entries')
+  .select('id, title, slug, category_slug, meta_description, created_at', { count: 'exact' })
+  .eq('category_slug', category)
+  .order('created_at', { ascending: false })
+  .range(from, to);
+
+if (error) {
+  console.error(`Error querying category [${category}] from lock_cylinder_entries:`, error);
+}
+
+const totalEntries = count || 0;
+const totalPages = Math.ceil(totalEntries / PAGE_SIZE);
+
+const pageTitle = `${currentCat.title} | Lock Cylinder Technical Directory`;
+const pageDesc = `${currentCat.desc} Browse complete technical documentation, sizing metrics, and CAD engineering data.`;
+---
+
+<Layout title={pageTitle} description={pageDesc}>
+  <!-- Category Description Hero (遵循 Non-sticky 规则，自然向上滚动以释放视口空间) -->
+  <section class="category-hero">
+    <div class="container">
+      <Breadcrumbs items={[{ name: currentCat.title }]} />
+      <div class="cat-hero-header">
+        <span class="cat-pill">{category}</span>
+        <h1 class="cat-h1">{currentCat.title}</h1>
+        <p class="cat-zh-sub">{currentCat.zhTitle}</p>
+        <p class="cat-p">{currentCat.desc}</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- Article Grid Listing -->
+  <main class="category-content-section">
+    <div class="container">
+      <div class="listing-toolbar">
+        <span class="count-badge">Total Articles: <strong>{totalEntries}</strong></span>
+        {totalPages > 1 && (
+          <span class="page-indicator">Page {currentPage} of {totalPages}</span>
+        )}
+      </div>
+
+      {entries && entries.length > 0 ? (
+        <div class="category-grid">
+          {entries.map((item) => (
+            <article class="entry-card">
+              <h2 class="entry-title">
+                <a href={`/${item.category_slug}/${item.slug}`}>{item.title}</a>
+              </h2>
+              <p class="entry-snippet">
+                {item.meta_description || 'Detailed engineering analysis, material properties, and mechanical specifications.'}
+              </p>
+              <div class="entry-card-footer">
+                <a href={`/${item.category_slug}/${item.slug}`} class="entry-btn">
+                  View Technical Spec &rarr;
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div class="empty-box">
+          <p>No published technical articles found under <strong>{category}</strong> yet.</p>
+          <a href="/" class="back-home-btn">&larr; Return to Home Matrix</a>
+        </div>
+      )}
+
+      <!-- Pagination Controls -->
+      {totalPages > 1 && (
+        <nav class="pagination" aria-label="Pagination">
+          {currentPage > 1 && (
+            <a href={`/${category}?page=${currentPage - 1}`} class="page-link prev">
+              &larr; Previous Page
+            </a>
+          )}
+
+          <div class="page-numbers">
+            {Array.from({ length: totalPages }, (_, i) => i + 1).map((pageNum) => (
+              <a 
+                href={`/${category}?page=${pageNum}`} 
+                class={`page-num ${pageNum === currentPage ? 'active' : ''}`}
+                aria-current={pageNum === currentPage ? 'page' : undefined}
+              >
+                {pageNum}
+              </a>
+            ))}
+          </div>
+
+          {currentPage < totalPages && (
+            <a href={`/${category}?page=${currentPage + 1}`} class="page-link next">
+              Next Page &rarr;
+            </a>
+          )}
+        </nav>
+      )}
+    </div>
+  </main>
+</Layout>
+
+<style>
+  /* Category Hero - Static natural flow */
+  .category-hero {
+    position: relative;
+    top: auto;
+    z-index: auto;
+    background: #f8fafc;
+    border-bottom: 1px solid #e2e8f0;
+    padding: 2rem 0 2.5rem 0;
+  }
+  .cat-hero-header {
+    max-width: 850px;
+  }
+  .cat-pill {
+    display: inline-block;
+    padding: 0.25rem 0.65rem;
+    background: #e0f2fe;
+    color: #0369a1;
+    font-size: 0.75rem;
+    font-weight: 700;
+    border-radius: 4px;
+    text-transform: uppercase;
+    margin-bottom: 0.75rem;
+  }
+  .cat-h1 {
+    font-size: 2.15rem;
+    font-weight: 800;
+    color: #0f172a;
+    line-height: 1.25;
+    margin-bottom: 0.25rem;
+  }
+  .cat-zh-sub {
+    font-size: 0.95rem;
+    color: #64748b;
+    margin-bottom: 0.85rem;
+    font-weight: 500;
+  }
+  .cat-p {
+    font-size: 1rem;
+    line-height: 1.6;
+    color: #334155;
+  }
+
+  .category-content-section {
+    padding: 3rem 0 4.5rem 0;
+    background: #ffffff;
+  }
+  .listing-toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 1.75rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #f1f5f9;
+  }
+  .count-badge {
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+  .page-indicator {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+  }
+
+  .category-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.75rem;
+  }
+  .entry-card {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.75rem;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .entry-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.05);
+    border-color: #cbd5e1;
+  }
+  .entry-title {
+    font-size: 1.2rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin-bottom: 0.75rem;
+  }
+  .entry-title a {
+    color: #0f172a;
+    text-decoration: none;
+  }
+  .entry-title a:hover {
+    color: #2563eb;
+  }
+  .entry-snippet {
+    font-size: 0.9rem;
+    line-height: 1.55;
+    color: #475569;
+    flex: 1;
+    margin-bottom: 1.25rem;
+  }
+  .entry-card-footer {
+    border-top: 1px solid #f8fafc;
+    padding-top: 0.85rem;
+  }
+  .entry-btn {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+  }
+
+  .empty-box {
+    text-align: center;
+    padding: 4rem 1rem;
+    background: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+  }
+  .back-home-btn {
+    display: inline-block;
+    margin-top: 1rem;
+    padding: 0.5rem 1.25rem;
+    background: #0f172a;
+    color: #ffffff;
+    text-decoration: none;
+    border-radius: 6px;
+    font-size: 0.875rem;
+  }
+
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 0.75rem;
+    margin-top: 3.5rem;
+    flex-wrap: wrap;
+  }
+  .page-link {
+    padding: 0.5rem 1rem;
+    background: #f8fafc;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #334155;
+    font-size: 0.875rem;
+    font-weight: 600;
+    text-decoration: none;
+  }
+  .page-link:hover {
+    background: #e2e8f0;
+  }
+  .page-numbers {
+    display: flex;
+    gap: 0.35rem;
+  }
+  .page-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 36px;
+    height: 36px;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #475569;
+    text-decoration: none;
+    border: 1px solid #e2e8f0;
+  }
+  .page-num.active {
+    background: #2563eb;
+    color: #ffffff;
+    border-color: #2563eb;
+  }
+</style>

@@ -1,0 +1,317 @@
+---
+// src/components/InquiryForm.astro
+interface Props {
+  productName?: string;
+  sourcePage?: string;
+  formTitle?: string;
+  buttonText?: string;
+  theme?: 'light' | 'dark';
+  apiEndpoint?: string;
+}
+
+const {
+  productName = '',
+  sourcePage = Astro.url.pathname,
+  formTitle = 'Request a Quote / Inquire Now',
+  buttonText = 'Send Inquiry',
+  theme = 'light',
+  apiEndpoint = '/api/inquiry' // 对应 src/pages/api/inquiry.ts 路由
+} = Astro.props;
+
+// 生成唯一实例 ID，防止同一页面存在多个表单（如内嵌表单 + 弹窗表单）时 ID 冲突
+const formId = `form-${Math.random().toString(36).substring(2, 9)}`;
+---
+
+<div class={`inquiry-form-wrapper theme-${theme}`}>
+  {formTitle && <h3 class="form-title">{formTitle}</h3>}
+
+  <form class="inquiry-form" data-form-id={formId} data-api-endpoint={apiEndpoint}>
+    <!-- 上下文隐藏字段 -->
+    <input type="hidden" name="source_page" value={sourcePage} />
+    <input type="hidden" name="product_name" value={productName} />
+
+    <!-- 防垃圾 Honeypot 字段（对用户和辅助设备完全隐藏） -->
+    <div style="display: none !important;" aria-hidden="true">
+      <input type="text" name="company_website_hp" tabindex="-1" autocomplete="off" />
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Name <span class="required">*</span></label>
+        <input type="text" name="name" required placeholder="Your Full Name" />
+      </div>
+
+      <div class="form-group">
+        <label>Email <span class="required">*</span></label>
+        <input type="email" name="email" required placeholder="name@company.com" />
+      </div>
+
+      <div class="form-group full-width">
+        <label>Message / Requirements <span class="required">*</span></label>
+        <textarea name="message" rows="4" required placeholder="Please describe your specifications, dimensions, quantity or application requirements..."></textarea>
+      </div>
+    </div>
+
+    <button type="submit" class="submit-btn">
+      <span class="btn-text">{buttonText}</span>
+      <span class="btn-loading hidden">
+        <svg class="spinner" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+          <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+          <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+        </svg>
+        Sending...
+      </span>
+    </button>
+
+    <div class="form-feedback hidden" role="alert"></div>
+  </form>
+</div>
+
+<script>
+  function initInquiryForms() {
+    document.querySelectorAll<HTMLFormElement>('.inquiry-form').forEach((form) => {
+      if (form.dataset.initialized) return;
+      form.dataset.initialized = 'true';
+
+      form.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        const submitBtn = form.querySelector<HTMLButtonElement>('.submit-btn');
+        if (!submitBtn) return;
+
+        const btnText = submitBtn.querySelector<HTMLElement>('.btn-text');
+        const btnLoading = submitBtn.querySelector<HTMLElement>('.btn-loading');
+        const feedback = form.querySelector<HTMLDivElement>('.form-feedback');
+        const endpoint = form.dataset.apiEndpoint || '/api/inquiry';
+
+        // 1. 防重复点击状态切换
+        submitBtn.disabled = true;
+        btnText?.classList.add('hidden');
+        btnLoading?.classList.remove('hidden');
+        if (feedback) {
+          feedback.classList.add('hidden');
+          feedback.className = 'form-feedback hidden';
+          feedback.textContent = '';
+        }
+
+        const formData = new FormData(form);
+        const payload = Object.fromEntries(formData.entries());
+
+        // 2. 垃圾表单蜜罐过滤：若被机器人填写则静默丢弃
+        if (payload.company_website_hp) {
+          form.reset();
+          submitBtn.disabled = false;
+          btnText?.classList.remove('hidden');
+          btnLoading?.classList.add('hidden');
+          return;
+        }
+
+        try {
+          // 3. 请求后端集中 API
+          const res = await fetch(endpoint, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(payload)
+          });
+
+          const result = await res.json().catch(() => ({}));
+
+          if (res.ok && result.success) {
+            if (feedback) {
+              feedback.textContent = result.message || 'Thank you! Your inquiry has been sent successfully.';
+              feedback.className = 'form-feedback success';
+              feedback.classList.remove('hidden');
+            }
+            form.reset();
+          } else {
+            throw new Error(result.message || 'Submission failed. Please check your information and try again.');
+          }
+        } catch (err: any) {
+          if (feedback) {
+            feedback.textContent = err.message || 'An error occurred while sending your request. Please try again.';
+            feedback.className = 'form-feedback error';
+            feedback.classList.remove('hidden');
+          }
+        } finally {
+          submitBtn.disabled = false;
+          btnText?.classList.remove('hidden');
+          btnLoading?.classList.add('hidden');
+        }
+      });
+    });
+  }
+
+  // 初始化并兼容 Astro 视图转换生命周期
+  initInquiryForms();
+  document.addEventListener('astro:page-load', initInquiryForms);
+</script>
+
+<style>
+  .inquiry-form-wrapper {
+    width: 100%;
+    border-radius: 12px;
+    padding: 1.75rem;
+    box-sizing: border-box;
+    transition: background-color 0.2s ease, border-color 0.2s ease;
+  }
+
+  /* 主题配色控制 */
+  .theme-light {
+    background-color: #ffffff;
+    border: 1px solid #e2e8f0;
+    color: #1e293b;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+  }
+
+  .theme-dark {
+    background-color: #0f172a;
+    border: 1px solid #334155;
+    color: #f8fafc;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+  }
+
+  .form-title {
+    margin: 0 0 1.25rem 0;
+    font-size: 1.25rem;
+    font-weight: 700;
+    line-height: 1.4;
+  }
+
+  .form-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1rem;
+    margin-bottom: 1.25rem;
+  }
+
+  .form-group {
+    display: flex;
+    flex-direction: column;
+    gap: 0.375rem;
+  }
+
+  .form-group.full-width {
+    grid-column: 1 / -1;
+  }
+
+  .form-group label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: inherit;
+  }
+
+  .required {
+    color: #ef4444;
+    margin-left: 2px;
+  }
+
+  .form-group input,
+  .form-group textarea {
+    width: 100%;
+    box-sizing: border-box;
+    padding: 0.65rem 0.85rem;
+    font-size: 0.925rem;
+    border-radius: 6px;
+    border: 1px solid #cbd5e1;
+    background-color: #ffffff;
+    color: #0f172a;
+    font-family: inherit;
+    outline: none;
+    transition: border-color 0.2s ease, box-shadow 0.2s ease;
+  }
+
+  .theme-dark .form-group input,
+  .theme-dark .form-group textarea {
+    background-color: #1e293b;
+    border-color: #475569;
+    color: #f8fafc;
+  }
+
+  .form-group input:focus,
+  .form-group textarea:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+
+  .form-group textarea {
+    resize: vertical;
+    min-height: 90px;
+  }
+
+  .submit-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    font-weight: 600;
+    color: #ffffff;
+    background-color: #2563eb;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s ease, opacity 0.2s ease;
+  }
+
+  .submit-btn:hover:not(:disabled) {
+    background-color: #1d4ed8;
+  }
+
+  .submit-btn:disabled {
+    opacity: 0.65;
+    cursor: not-allowed;
+  }
+
+  .btn-loading {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.5rem;
+  }
+
+  .spinner {
+    width: 1.125rem;
+    height: 1.125rem;
+    animation: spin 1s linear infinite;
+  }
+
+  .opacity-25 { opacity: 0.25; }
+  .opacity-75 { opacity: 0.75; }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to { transform: rotate(360deg); }
+  }
+
+  .form-feedback {
+    margin-top: 1rem;
+    padding: 0.75rem 1rem;
+    border-radius: 6px;
+    font-size: 0.875rem;
+    line-height: 1.4;
+  }
+
+  .form-feedback.success {
+    background-color: #f0fdf4;
+    border: 1px solid #bbf7d0;
+    color: #15803d;
+  }
+
+  .form-feedback.error {
+    background-color: #fef2f2;
+    border: 1px solid #fecaca;
+    color: #b91c1c;
+  }
+
+  .hidden {
+    display: none !important;
+  }
+
+  @media (max-width: 640px) {
+    .inquiry-form-wrapper {
+      padding: 1.25rem;
+    }
+    .form-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

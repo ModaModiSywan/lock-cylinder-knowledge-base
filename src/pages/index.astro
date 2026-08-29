@@ -1,11 +1,424 @@
 ---
-import Welcome from '../components/Welcome.astro';
-import Layout from '../layouts/Layout.astro';
+export const prerender = false;
 
-// Welcome to Astro! Wondering what to do next? Check out the Astro documentation at https://docs.astro.build
-// Don't want to use any of this? Delete everything in this file, the `assets`, `components`, and `layouts` directories, and start fresh.
+import Layout from '../layouts/Layout.astro';
+import { supabase } from '../lib/supabase';
+
+// 6 大核心锁芯采购与技术分类元数据
+const CATEGORIES = [
+  {
+    slug: 'types-functions',
+    title: 'Types & Configurations',
+    zhTitle: '结构与功能分类',
+    desc: 'Euro profile double, half/single, thumbturn, BK bathroom privacy, and asymmetric offset cylinders.',
+    icon: 'fa-cube'
+  },
+  {
+    slug: 'materials-finishes',
+    title: 'Materials & Finishes',
+    zhTitle: '材料与表面处理',
+    desc: 'Solid extruded H59/H62 brass, Zamak zinc alloy, PVD coating, Satin Nickel, Matte Black & salt spray ratings.',
+    icon: 'fa-layer-group'
+  },
+  {
+    slug: 'keying-systems',
+    title: 'Keying Systems & Master Keys',
+    zhTitle: '钥匙管理系统',
+    desc: '2 to 5-level Master Key (MK/GMK/GGMK), Keyed Alike (KA), Keyed Different (KD), and 2-in-1 construction balls.',
+    icon: 'fa-key'
+  },
+  {
+    slug: 'security-mechanisms',
+    title: 'Security & Anti-Attack',
+    zhTitle: '防盗结构与工程',
+    desc: 'Sacrificial anti-snap grooves, hardened steel anti-drill pins, anti-bump spools, and anti-plug pulling collars.',
+    icon: 'fa-shield-halved'
+  },
+  {
+    slug: 'standards-testing',
+    title: 'Standards & Compliance',
+    zhTitle: '测试标准与认证',
+    desc: 'EN 1303:2015 8-digit codes, ANSI/BHMA Grade 1, DIN 18252, Chinese Class C, and UL 10C fire ratings.',
+    icon: 'fa-certificate'
+  },
+  {
+    slug: 'sizing-installation',
+    title: 'Sizing & Cam Selection',
+    zhTitle: '尺寸测量与安装选型',
+    desc: 'A/B dimension calculation, DIN 30° standard cams, 10/13/14-tooth cogwheels, and narrow-stile profile fitment.',
+    icon: 'fa-ruler-combined'
+  }
+];
+
+// 从表 lock_cylinder_entries 查询最新发布的 9 篇文章
+const { data: latestArticles, error } = await supabase
+  .from('lock_cylinder_entries')
+  .select('title, slug, category_slug, meta_description, created_at')
+  .order('created_at', { ascending: false })
+  .limit(9);
+
+if (error) {
+  console.error('Error fetching latest lock cylinder entries:', error);
+}
+
+const pageTitle = "Architectural Door Lock Cylinders & Master Keying Engineering Portal";
+const pageDesc = "Authoritative technical guides, mechanical specifications, EN 1303 standards, anti-snap engineering, and B2B master key calculations for architectural lock cylinders.";
 ---
 
-<Layout>
-	<Welcome />
+<Layout title={pageTitle} description={pageDesc}>
+  <!-- Hero Section -->
+  <section class="hero-section">
+    <div class="container hero-content">
+      <div class="hero-badge">B2B Architectural Hardware & Engineering Matrix</div>
+      <h1 class="hero-title">Architectural Lock Cylinders & High-Security Master Key Systems</h1>
+      <p class="hero-subtitle">
+        Comprehensive engineering documentation, mechanical kinematics, material metallurgy, international certification benchmarks (EN 1303 / ANSI Grade 1), and B2B procurement matrices.
+      </p>
+
+      <div class="hero-search-wrapper">
+        <form action="/search" method="get" class="search-form">
+          <input 
+            type="text" 
+            name="q" 
+            placeholder="Search Euro profile, EN 1303, Master Keying, Anti-Snap, H59 Brass..." 
+            required 
+            class="search-input"
+          />
+          <button type="submit" class="search-btn">Search Specs</button>
+        </form>
+      </div>
+
+      <div class="hero-stats">
+        <div class="stat-item">
+          <span class="stat-num">6 Core</span>
+          <span class="stat-label">Topic Clusters</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">EN 1303</span>
+          <span class="stat-label">Certified Protocols</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">5-Level</span>
+          <span class="stat-label">Master Keying</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-num">H59/H62</span>
+          <span class="stat-label">Solid Brass Base</span>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- 6 Core Categories Grid -->
+  <section class="categories-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Technical Knowledge Clusters</h2>
+        <p class="section-subtitle">Explore architectural lock cylinders by mechanical engineering classification and standards.</p>
+      </div>
+
+      <div class="categories-grid">
+        {CATEGORIES.map((cat) => (
+          <a href={`/${cat.slug}`} class="category-card">
+            <div class="category-card-body">
+              <div class="cat-header">
+                <span class="cat-badge">{cat.slug}</span>
+              </div>
+              <h3 class="cat-title">{cat.title}</h3>
+              <p class="cat-zh">{cat.zhTitle}</p>
+              <p class="cat-desc">{cat.desc}</p>
+            </div>
+            <div class="cat-footer">
+              <span>View Technical Directory</span>
+              <span class="arrow">&rarr;</span>
+            </div>
+          </a>
+        ))}
+      </div>
+    </div>
+  </section>
+
+  <!-- Latest Engineering Articles -->
+  <section class="latest-section">
+    <div class="container">
+      <div class="section-header">
+        <h2 class="section-title">Latest Technical Guides & Specifications</h2>
+        <p class="section-subtitle">Recently published articles from the lock cylinder engineering knowledge base.</p>
+      </div>
+
+      {latestArticles && latestArticles.length > 0 ? (
+        <div class="articles-grid">
+          {latestArticles.map((item) => (
+            <article class="article-item-card">
+              <div class="article-card-top">
+                <a href={`/${item.category_slug}`} class="article-category-tag">
+                  {item.category_slug}
+                </a>
+              </div>
+              <h3 class="article-item-title">
+                <a href={`/${item.category_slug}/${item.slug}`}>
+                  {item.title}
+                </a>
+              </h3>
+              <p class="article-item-snippet">
+                {item.meta_description || 'Click to view the comprehensive engineering breakdown, specifications, and CAD data.'}
+              </p>
+              <div class="article-item-footer">
+                <a href={`/${item.category_slug}/${item.slug}`} class="read-more-link">
+                  Read Technical Guide &rarr;
+                </a>
+              </div>
+            </article>
+          ))}
+        </div>
+      ) : (
+        <div class="empty-state">
+          <p>Technical knowledge entries are being synchronized. Please check back shortly.</p>
+        </div>
+      )}
+    </div>
+  </section>
 </Layout>
+
+<style>
+  .hero-section {
+    background: linear-gradient(135deg, #0f172a 0%, #1e293b 100%);
+    color: #f8fafc;
+    padding: 4.5rem 0 3.5rem 0;
+    border-bottom: 1px solid #334155;
+  }
+  .hero-content {
+    max-width: 900px;
+    margin: 0 auto;
+    text-align: center;
+  }
+  .hero-badge {
+    display: inline-block;
+    padding: 0.35rem 0.85rem;
+    background: rgba(37, 99, 235, 0.2);
+    border: 1px solid rgba(59, 130, 246, 0.4);
+    color: #93c5fd;
+    border-radius: 9999px;
+    font-size: 0.825rem;
+    font-weight: 600;
+    margin-bottom: 1.25rem;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+  }
+  .hero-title {
+    font-size: 2.5rem;
+    line-height: 1.2;
+    font-weight: 800;
+    margin-bottom: 1.25rem;
+    color: #ffffff;
+  }
+  .hero-subtitle {
+    font-size: 1.05rem;
+    line-height: 1.6;
+    color: #cbd5e1;
+    margin-bottom: 2rem;
+  }
+  .hero-search-wrapper {
+    max-width: 650px;
+    margin: 0 auto 2.5rem auto;
+  }
+  .search-form {
+    display: flex;
+    gap: 0.5rem;
+    background: #ffffff;
+    padding: 0.4rem;
+    border-radius: 8px;
+    box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.3);
+  }
+  .search-input {
+    flex: 1;
+    border: none;
+    padding: 0.75rem 1rem;
+    font-size: 0.95rem;
+    outline: none;
+    color: #0f172a;
+  }
+  .search-btn {
+    background: #2563eb;
+    color: #ffffff;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+  }
+  .search-btn:hover {
+    background: #1d4ed8;
+  }
+  .hero-stats {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1rem;
+    border-top: 1px solid rgba(255, 255, 255, 0.1);
+    padding-top: 2rem;
+  }
+  .stat-num {
+    display: block;
+    font-size: 1.35rem;
+    font-weight: 800;
+    color: #60a5fa;
+  }
+  .stat-label {
+    font-size: 0.8rem;
+    color: #94a3b8;
+    text-transform: uppercase;
+  }
+
+  .categories-section {
+    padding: 4rem 0;
+    background: #f8fafc;
+  }
+  .section-header {
+    text-align: center;
+    max-width: 700px;
+    margin: 0 auto 2.5rem auto;
+  }
+  .section-title {
+    font-size: 1.85rem;
+    font-weight: 800;
+    color: #0f172a;
+    margin-bottom: 0.5rem;
+  }
+  .section-subtitle {
+    font-size: 0.95rem;
+    color: #64748b;
+  }
+  .categories-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .category-card {
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.75rem;
+    text-decoration: none;
+    transition: transform 0.2s, box-shadow 0.2s, border-color 0.2s;
+  }
+  .category-card:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 20px -5px rgba(0, 0, 0, 0.08);
+    border-color: #93c5fd;
+  }
+  .cat-badge {
+    font-size: 0.75rem;
+    font-weight: 700;
+    color: #2563eb;
+    background: #eff6ff;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .cat-title {
+    font-size: 1.25rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin: 0.75rem 0 0.25rem 0;
+  }
+  .cat-zh {
+    font-size: 0.85rem;
+    color: #64748b;
+    margin-bottom: 0.75rem;
+  }
+  .cat-desc {
+    font-size: 0.88rem;
+    line-height: 1.5;
+    color: #475569;
+  }
+  .cat-footer {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid #f1f5f9;
+    margin-top: 1.25rem;
+    padding-top: 0.85rem;
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2563eb;
+  }
+
+  .latest-section {
+    padding: 4rem 0;
+    background: #ffffff;
+  }
+  .articles-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+  }
+  .article-item-card {
+    display: flex;
+    flex-direction: column;
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    transition: box-shadow 0.2s;
+  }
+  .article-item-card:hover {
+    box-shadow: 0 8px 16px -4px rgba(0, 0, 0, 0.06);
+  }
+  .article-category-tag {
+    font-size: 0.75rem;
+    font-weight: 600;
+    color: #475569;
+    text-transform: uppercase;
+    text-decoration: none;
+    background: #f1f5f9;
+    padding: 0.2rem 0.45rem;
+    border-radius: 4px;
+  }
+  .article-item-title {
+    font-size: 1.1rem;
+    font-weight: 700;
+    line-height: 1.4;
+    margin: 0.75rem 0 0.5rem 0;
+  }
+  .article-item-title a {
+    color: #0f172a;
+    text-decoration: none;
+  }
+  .article-item-title a:hover {
+    color: #2563eb;
+    text-decoration: underline;
+  }
+  .article-item-snippet {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 1rem;
+  }
+  .article-item-footer {
+    border-top: 1px solid #f8fafc;
+    padding-top: 0.75rem;
+  }
+  .read-more-link {
+    font-size: 0.85rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .empty-state {
+    text-align: center;
+    padding: 3rem 0;
+    color: #64748b;
+  }
+
+  @media (max-width: 768px) {
+    .hero-title { font-size: 1.85rem; }
+    .hero-stats { grid-template-columns: repeat(2, 1fr); gap: 1.25rem; }
+    .search-form { flex-direction: column; }
+    .search-btn { width: 100%; }
+  }
+</style>

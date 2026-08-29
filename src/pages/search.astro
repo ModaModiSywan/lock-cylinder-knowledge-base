@@ -1,0 +1,316 @@
+---
+import Layout from '../layouts/Layout.astro';
+import Breadcrumbs from '../components/Breadcrumbs.astro';
+import { supabase } from '../lib/supabase';
+
+export const prerender = false;
+
+// 1. 获取搜索关键词与分页参数
+const query = (Astro.url.searchParams.get('q') || '').trim();
+const page = parseInt(Astro.url.searchParams.get('page') || '1', 10);
+const pageSize = 12;
+const offset = (page - 1) * pageSize;
+
+let results: any[] = [];
+let totalCount = 0;
+let errorMsg = '';
+
+// 2. 查询 Supabase（修正表名为 lock_cylinder_entries，正文字段为 content）
+if (query) {
+  try {
+    const { data, count, error } = await supabase
+      .from('lock_cylinder_entries')
+      .select('id, title, slug, category_slug, meta_description, created_at', { count: 'exact' })
+      .or(`title.ilike.%${query}%,meta_description.ilike.%${query}%,content.ilike.%${query}%`)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + pageSize - 1);
+
+    if (error) {
+      errorMsg = error.message;
+    } else {
+      results = data || [];
+      totalCount = count || 0;
+    }
+  } catch (err: any) {
+    errorMsg = err.message || 'Error occurred while searching';
+  }
+}
+
+const totalPages = Math.ceil(totalCount / pageSize);
+const pageTitle = query ? `Search: "${query}" | Lock Cylinder Knowledge Base` : 'Search Lock Cylinder Knowledge Base';
+---
+
+<Layout title={pageTitle} description={`Search lock cylinder technical specifications, master keying, and standards for "${query}"`}>
+  <main class="container search-page">
+    <Breadcrumbs items={[{ name: 'Search', url: '/search' }]} />
+
+    <section class="search-hero">
+      <h1 class="search-title">Search Lock Cylinder Directory</h1>
+      <form method="GET" action="/search" class="search-form">
+        <div class="input-wrapper">
+          <svg class="search-icon" xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+            <circle cx="11" cy="11" r="8"></circle>
+            <line x1="21" y1="21" x2="16.65" y2="16.65"></line>
+          </svg>
+          <input
+            type="search"
+            name="q"
+            value={query}
+            placeholder="Search Euro profile, EN 1303, Master Keying, Anti-Snap, H59 Brass..."
+            required
+            autocomplete="off"
+            class="search-input"
+          />
+        </div>
+        <button type="submit" class="submit-btn">Search Specs</button>
+      </form>
+    </section>
+
+    {query && (
+      <section class="results-section">
+        <div class="results-header">
+          <p class="results-count">
+            Found <strong>{totalCount}</strong> results for "<span>{query}</span>"
+          </p>
+        </div>
+
+        {errorMsg && (
+          <div class="error-box">
+            <p>Failed to load search results: {errorMsg}</p>
+          </div>
+        )}
+
+        {results.length > 0 ? (
+          <div class="results-grid">
+            {results.map((item) => (
+              <article class="result-card">
+                <span class="category-badge">{item.category_slug}</span>
+                <h2 class="card-title">
+                  <a href={`/${item.category_slug}/${item.slug}`}>{item.title}</a>
+                </h2>
+                <p class="card-desc">
+                  {item.meta_description || 'Click to view full technical specifications, sizing metrics, and CAD parameters...'}
+                </p>
+                <a href={`/${item.category_slug}/${item.slug}`} class="read-more">
+                  Read Technical Guide &rarr;
+                </a>
+              </article>
+            ))}
+          </div>
+        ) : (
+          !errorMsg && (
+            <div class="empty-state">
+              <p>No matching technical articles found for "{query}".</p>
+              <span>Try searching for broader keywords, e.g., "Euro profile", "Anti-drill", "Master key", "H59 brass".</span>
+            </div>
+          )
+        )}
+
+        {totalPages > 1 && (
+          <nav class="pagination">
+            {page > 1 && (
+              <a href={`/search?q=${encodeURIComponent(query)}&page=${page - 1}`} class="page-btn">
+                &larr; Previous
+              </a>
+            )}
+            <span class="page-info">Page {page} of {totalPages}</span>
+            {page < totalPages && (
+              <a href={`/search?q=${encodeURIComponent(query)}&page=${page + 1}`} class="page-btn">
+                Next &rarr;
+              </a>
+            )}
+          </nav>
+        )}
+      </section>
+    )}
+  </main>
+</Layout>
+
+<style>
+  .search-page {
+    padding-top: 1.5rem;
+    padding-bottom: 4rem;
+    min-width: 0;
+  }
+  .search-hero {
+    text-align: center;
+    max-width: 720px;
+    margin: 1.5rem auto 2.5rem;
+  }
+  .search-title {
+    font-size: 2rem;
+    font-weight: 700;
+    color: #0f172a;
+    margin-bottom: 1.25rem;
+  }
+  .search-form {
+    display: flex;
+    gap: 0.75rem;
+    width: 100%;
+  }
+  .input-wrapper {
+    position: relative;
+    flex: 1;
+    display: flex;
+    align-items: center;
+  }
+  .search-icon {
+    position: absolute;
+    left: 1rem;
+    color: #94a3b8;
+    pointer-events: none;
+  }
+  .search-input {
+    width: 100%;
+    height: 48px;
+    padding: 0.5rem 1rem 0.5rem 2.85rem;
+    border: 1.5px solid #cbd5e1;
+    border-radius: 8px;
+    font-size: 1rem;
+    outline: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+  }
+  .search-input:focus {
+    border-color: #2563eb;
+    box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  }
+  .submit-btn {
+    height: 48px;
+    padding: 0 1.5rem;
+    background-color: #2563eb;
+    color: #ffffff;
+    font-weight: 600;
+    font-size: 1rem;
+    border: none;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+    white-space: nowrap;
+  }
+  .submit-btn:hover {
+    background-color: #1d4ed8;
+  }
+  .results-header {
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #e2e8f0;
+  }
+  .results-count {
+    color: #475569;
+    font-size: 1rem;
+  }
+  .results-count strong {
+    color: #0f172a;
+  }
+  .results-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+    gap: 1.5rem;
+    margin-bottom: 2.5rem;
+  }
+  .result-card {
+    background: #ffffff;
+    border: 1px solid #e2e8f0;
+    border-radius: 8px;
+    padding: 1.5rem;
+    display: flex;
+    flex-direction: column;
+    transition: box-shadow 0.2s, transform 0.2s;
+    min-width: 0;
+  }
+  .result-card:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 8px 20px rgba(0, 0, 0, 0.06);
+  }
+  .category-badge {
+    align-self: flex-start;
+    font-size: 0.75rem;
+    font-weight: 600;
+    text-transform: uppercase;
+    background-color: #f1f5f9;
+    color: #475569;
+    padding: 0.2rem 0.5rem;
+    border-radius: 4px;
+    margin-bottom: 0.75rem;
+  }
+  .card-title {
+    font-size: 1.15rem;
+    font-weight: 600;
+    line-height: 1.4;
+    margin-bottom: 0.5rem;
+  }
+  .card-title a {
+    color: #0f172a;
+    text-decoration: none;
+  }
+  .card-title a:hover {
+    color: #2563eb;
+  }
+  .card-desc {
+    font-size: 0.875rem;
+    color: #64748b;
+    line-height: 1.5;
+    flex: 1;
+    margin-bottom: 1rem;
+  }
+  .read-more {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: #2563eb;
+    text-decoration: none;
+  }
+  .read-more:hover {
+    text-decoration: underline;
+  }
+  .empty-state, .error-box {
+    text-align: center;
+    padding: 3rem 1rem;
+    background-color: #f8fafc;
+    border-radius: 8px;
+    border: 1px dashed #cbd5e1;
+    color: #475569;
+  }
+  .empty-state span {
+    display: block;
+    margin-top: 0.5rem;
+    font-size: 0.875rem;
+    color: #94a3b8;
+  }
+  .pagination {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 1rem;
+    margin-top: 2rem;
+  }
+  .page-btn {
+    padding: 0.5rem 1rem;
+    border: 1px solid #cbd5e1;
+    border-radius: 6px;
+    color: #334155;
+    text-decoration: none;
+    font-size: 0.875rem;
+  }
+  .page-btn:hover {
+    background-color: #f1f5f9;
+  }
+  .page-info {
+    font-size: 0.875rem;
+    color: #64748b;
+  }
+
+  @media (max-width: 640px) {
+    .search-title {
+      font-size: 1.5rem;
+    }
+    .search-form {
+      flex-direction: column;
+    }
+    .submit-btn {
+      width: 100%;
+    }
+    .results-grid {
+      grid-template-columns: 1fr;
+    }
+  }
+</style>

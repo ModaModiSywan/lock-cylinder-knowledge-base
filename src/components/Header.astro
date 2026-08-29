@@ -1,0 +1,150 @@
+---
+// src/components/Header.astro
+import { HEADER_NAV_ITEMS } from '../config/navigation';
+
+const currentPath = Astro.url.pathname;
+---
+
+<header class="site-header">
+  <div class="container nav-bar">
+    <!-- Brand Logo -->
+    <a href="/" class="brand-logo">
+      <img src="/logo.png" alt="Logo" class="site-logo-img" onerror="this.style.display='none'" />
+      <span class="brand-title">Lock<span>Cylinder</span></span>
+    </a>
+
+    <!-- Desktop Navigation (6 Core Categories) -->
+    <nav class="nav-links" aria-label="Main Navigation">
+      {HEADER_NAV_ITEMS.map((item) => {
+        const isActive = item.href === '/' 
+          ? currentPath === '/' 
+          : currentPath.startsWith(item.href);
+        return (
+          <a 
+            href={item.href} 
+            class:list={['nav-link-item', { 'is-active': isActive }]}
+          >
+            {item.name}
+          </a>
+        );
+      })}
+    </nav>
+
+    <!-- Header CTA Button -->
+    <div class="nav-actions">
+      <a href="/quote" class="quote-btn">
+        <span class="quote-text-full">Request a Quote &rarr;</span>
+        <span class="quote-text-mobile">Quote &rarr;</span>
+      </a>
+    </div>
+  </div>
+</header>
+
+<style>
+  .site-header {
+    width: 100%;
+    background: #ffffff;
+    border-bottom: 1px solid #e2e8f0;
+    position: sticky;
+    top: 0;
+    z-index: 50;
+  }
+
+  .container {
+    width: 100%;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 1.5rem;
+  }
+
+  .nav-bar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    min-height: 64px;
+    gap: 1rem;
+  }
+
+  .brand-logo {
+    display: flex;
+    align-items: center;
+    gap: 0.5rem;
+    text-decoration: none;
+    font-weight: 700;
+    font-size: 1.15rem;
+    color: #0f172a;
+    flex-shrink: 0;
+  }
+  .brand-logo span span { color: #2563eb; }
+
+  /* 导航项排版 */
+  .nav-links {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex-wrap: nowrap;
+    overflow-x: auto;
+    scrollbar-width: none; /* 隐藏滚动条 */
+  }
+  .nav-links::-webkit-scrollbar { display: none; }
+
+  .nav-link-item {
+    font-size: 0.875rem;
+    font-weight: 500;
+    color: #475569;
+    text-decoration: none;
+    padding: 0.4rem 0.6rem;
+    border-radius: 6px;
+    white-space: nowrap;
+    transition: color 0.15s ease, background-color 0.15s ease;
+  }
+
+  .nav-link-item:hover {
+    color: #2563eb;
+    background-color: #f1f5f9;
+  }
+
+  .nav-link-item.is-active {
+    color: #2563eb;
+    background-color: #eff6ff;
+    font-weight: 600;
+  }
+
+  /* CTA 按钮 */
+  .quote-btn {
+    display: inline-flex;
+    align-items: center;
+    padding: 0.45rem 1rem;
+    background: #0f172a;
+    color: #ffffff;
+    font-size: 0.85rem;
+    font-weight: 600;
+    border-radius: 9999px;
+    text-decoration: none;
+    white-space: nowrap;
+    flex-shrink: 0;
+    transition: background-color 0.2s ease;
+  }
+  .quote-btn:hover { background: #2563eb; }
+
+  .quote-text-full { display: inline; }
+  .quote-text-mobile { display: none; }
+
+  /* 移动端/平板自适应 */
+  @media (max-width: 1024px) {
+    .nav-links {
+      gap: 0.4rem;
+    }
+    .nav-link-item {
+      font-size: 0.8125rem;
+      padding: 0.35rem 0.45rem;
+    }
+  }
+
+  @media (max-width: 768px) {
+    .nav-links { display: none; } /* 移动端建议折叠至汉堡菜单或底部导航 */
+    .quote-text-full { display: none; }
+    .quote-text-mobile { display: inline; }
+    .quote-btn { padding: 0.35rem 0.75rem; font-size: 0.8rem; }
+  }
+</style>

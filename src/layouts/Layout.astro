@@ -1,23 +1,176 @@
+---
+// src/layouts/Layout.astro
+import Header from '../components/Header.astro';
+import BackToTop from '../components/BackToTop.astro';
+
+interface Props {
+  title: string;
+  description?: string;
+  schemaJson?: object;
+  canonicalUrl?: string;
+}
+
+const { 
+  title, 
+  description = 'High-Security Door Lock Cylinders, Euro Profile & Mortise Actuators Technical Knowledge Base', 
+  schemaJson,
+  canonicalUrl = Astro.url.href
+} = Astro.props;
+---
+
 <!doctype html>
 <html lang="en">
-	<head>
-		<meta charset="utf-8" />
-		<meta name="viewport" content="width=device-width" />
-		<link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-		<link rel="icon" href="/favicon.ico" />
-		<meta name="generator" content={Astro.generator} />
-		<title>Astro Basics</title>
-	</head>
-	<body>
-		<slot />
-	</body>
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=5.0, viewport-fit=cover" />
+    <title>{title}</title>
+    <meta name="description" content={description} />
+    <link rel="canonical" href={canonicalUrl} />
+    <link rel="icon" type="image/png" href="/favicon.png" />
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+    
+    {schemaJson && (
+      <script type="application/ld+json" set:html={JSON.stringify(schemaJson)} />
+    )}
+  </head>
+  <body>
+    <!-- 顶部统一导航组件 -->
+    <Header />
+
+    <!-- 页面核心内容插槽 -->
+    <main>
+      <slot />
+    </main>
+
+    <!-- 全局页脚 -->
+    <footer class="site-footer">
+      <div class="container footer-content">
+        <div class="footer-links">
+          <a href="/euro-profile-cylinders">Euro Profile</a>
+          <span class="sep">|</span>
+          <a href="/mortise-cylinders">Mortise Cylinders</a>
+          <span class="sep">|</span>
+          <a href="/high-security-mechanisms">High Security</a>
+          <span class="sep">|</span>
+          <a href="/master-key-systems">Master Keying</a>
+          <span class="sep">|</span>
+          <a href="/security-standards">Standards</a>
+        </div>
+        <p class="copyright">
+          &copy; 2026 Lock Cylinder Knowledge Base. Powered by <a href="https://xuyilock.com/" target="_blank" rel="noopener noreferrer">xuyilock.com</a>
+        </p>
+      </div>
+    </footer>
+
+    <!-- 返回顶部浮动按钮 -->
+    <BackToTop />
+  </body>
 </html>
 
-<style>
-	html,
-	body {
-		margin: 0;
-		width: 100%;
-		height: 100%;
-	}
+<style is:global>
+  /* 基础重置 */
+  *, *::before, *::after { 
+    box-sizing: border-box; 
+    margin: 0; 
+    padding: 0; 
+  }
+
+  /* 全局防 X 轴溢出与排版基准 */
+  html, body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+    position: relative;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Oxygen, Ubuntu, Cantarell, "Fira Sans", "Droid Sans", "Helvetica Neue", sans-serif;
+    color: #1e293b;
+    background-color: #f8fafc;
+    -webkit-text-size-adjust: 100%;
+  }
+
+  /* 媒体资源防撑破容器 */
+  img, svg, video, canvas, iframe { 
+    display: block; 
+    max-width: 100%; 
+    height: auto; 
+  }
+  
+  /* 代码与表格防溢出 */
+  pre, code { 
+    max-width: 100%; 
+    white-space: pre-wrap; 
+    word-break: break-word; 
+  }
+  
+  table { 
+    display: block; 
+    max-width: 100%; 
+    overflow-x: auto; 
+    -webkit-overflow-scrolling: touch; 
+  }
+
+  /* 核心 1200px 容器 */
+  .container { 
+    width: 100%; 
+    max-width: 1200px; 
+    margin: 0 auto; 
+    padding: 0 1.5rem; 
+  }
+
+  /* Footer 全局样式 */
+  .site-footer { 
+    background: #0b1120; 
+    color: #64748b; 
+    padding: 2.5rem 0; 
+    border-top: 1px solid #1e293b; 
+    text-align: center; 
+    font-size: 0.875rem; 
+    margin-top: 4rem;
+  }
+  
+  .footer-links { 
+    display: flex; 
+    justify-content: center; 
+    flex-wrap: wrap; 
+    gap: 0.75rem; 
+    margin-bottom: 0.85rem; 
+  }
+  
+  .footer-links a { 
+    color: #94a3b8; 
+    text-decoration: none; 
+    font-weight: 500; 
+    transition: color 0.2s ease;
+  }
+  
+  .footer-links a:hover { 
+    color: #38bdf8; 
+  }
+  
+  .footer-links .sep { 
+    color: #334155; 
+  }
+  
+  .copyright {
+    color: #64748b;
+    font-size: 0.8125rem;
+    line-height: 1.5;
+  }
+
+  .site-footer a { 
+    color: #38bdf8; 
+    text-decoration: none; 
+  }
+  
+  .site-footer a:hover {
+    text-decoration: underline;
+  }
+
+  @media (max-width: 768px) {
+    .container { 
+      padding: 0 1rem; 
+    }
+    .footer-links {
+      gap: 0.5rem;
+    }
+  }
 </style>
